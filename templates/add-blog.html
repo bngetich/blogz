@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content%}
+<h1 style="text-align: center;">Add A Blog Entry</h1>
+<form action="/newpost" method="POST">
+    <div class="form-group">
+        <label for="title">Title For Your New Blog:</label>
+        <input type="text" class="form-control" name="title" id="title">
+        <p class="error">{{title_error}}</p>
+    </div>
+    <div class="form-group">
+        <label for="body">Your New Blog:</label>
+        <textarea class="form-control" rows="5" name="body" id="body"></textarea>
+        <p class="error">{{body_error}}</p>
+    </div>
+    <button type="submit" class="btn btn-default">Add Entry</button>
+</form>
+{% endblock %}
