@@ -1,17 +1,18 @@
 {% extends "base.html"%} 
+
 {% block content %}
 <h1 style="text-align: center;">Build A Blog</h1>
-{% if blogs|length > 0 %}
+{% if blogs|length > 0 %} 
 {% for blog in blogs %}
 <div class="card">
-    <a href="{{url_for('display_blog', id=blog.id )}}">
+    <a href="{{url_for('display_blogs', id=blog.id )}}">
         <h2 class="card-title">{{blog.title}}</h2>
     </a>
-    <h5>{{blog.pub_date}}</h5>
     <p class="card-text">{{blog.body}}</p>
+    <p class="post-footer">
+        written by <a href="{{url_for('display_blogs', user=blog.owner.id )}}">{{blog.owner.username}}</a> on {{blog.pub_date}}
+    </p>
 </div>
-{% endfor %} 
-{% else %}
+{% endfor %} {% else %}
 <p>No blogs yet</p>
-{% endif %} 
-{% endblock %}
+{% endif %} {% endblock %}

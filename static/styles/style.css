@@ -10,3 +10,7 @@ body {
 .error {
   color: red;
 }
+.post-footer {
+  font-style: italic;
+  font-size: 12px
+}

@@ -1,5 +1,9 @@
-{% extends 'base.html'%}
+{% extends 'base.html'%} 
+
 {% block content %}
 <h2 style="text-align: center">{{blog.title}}</h2>
 <p>{{blog.body}}</p>
+<p class="post-footer">
+    written by <a href="{{url_for('display_blogs', user=blog.owner.id )}}">{{blog.owner.username}}</a> on {{blog.pub_date}}
+</p>
 {% endblock%}
