@@ -1,18 +1,31 @@
 {% extends "base.html"%} 
 
 {% block content %}
+
 <h1 style="text-align: center;">Build A Blog</h1>
-{% if blogs|length > 0 %} 
-{% for blog in blogs %}
-<div class="card">
-    <a href="{{url_for('display_blogs', id=blog.id )}}">
-        <h2 class="card-title">{{blog.title}}</h2>
-    </a>
-    <p class="card-text">{{blog.body}}</p>
-    <p class="post-footer">
-        written by <a href="{{url_for('display_blogs', user=blog.owner.id )}}">{{blog.owner.username}}</a> on {{blog.pub_date}}
-    </p>
-</div>
-{% endfor %} {% else %}
-<p>No blogs yet</p>
-{% endif %} {% endblock %}
+{% if blogs.items|length > 0 %} 
+    {% for blog in blogs.items %}
+    <div class="card">
+        <a href="{{url_for('display_blogs', id=blog.id )}}">
+            <h2 class="card-title">{{blog.title}}</h2>
+        </a>
+     <p class="card-text">{{blog.body}}</p>
+        <p class="post-footer">
+            written by <a href="{{url_for('display_blogs', user=blog.owner.id )}}">{{blog.owner.username}}</a> on {{blog.pub_date}}
+        </p>
+    </div>
+    {% endfor %} 
+    {% for page in blogs.iter_pages() %}
+    {% if page %}
+        {% if page > 1%}
+        <a href="{{url_for('display_blogs', page_num=page)}}">{{page}}</a>
+        {% endif %}
+    {% else %}
+        ...
+    {% endif %}
+    {% endfor %}
+{% else %}
+    <p>No blogs yet</p>
+{% endif %} 
+
+{% endblock %}

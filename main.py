@@ -1,47 +1,6 @@
-import re
-from flask import Flask, request, redirect, render_template, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-
-app = Flask(__name__)
-app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:root@localhost:3306/blogz'
-app.config['SQLALCHEMY_ECHO'] = True
-app.secret_key = 'y337kGcys&zP3B'
-db = SQLAlchemy(app)
-
-
-class Blog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.UnicodeText())
-    body = db.Column(db.UnicodeText())
-    pub_date = db.Column(db.DateTime)
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    def __init__(self, title, body, user, pub_date=None):
-        self.title = title
-        self.body = body
-        if pub_date is None:
-            pub_date = datetime.utcnow()
-        self.pub_date = pub_date
-        self.owner = user
-
-    def __repr__(self):
-        return '<Blog {0}>'.format(self.title)
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(120))
-    password = db.Column(db.String(120))
-    blogs = db.relationship('Blog', backref='owner')
-
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-
-    def __repr__(self):
-        return '<User {0}>'.format(self.username)
+from app import *
+from models import User, Blog
+from hashutils import check_pw_hash
 
 
 @app.before_request
@@ -51,17 +10,20 @@ def require_login():
         return redirect('/login')
 
 
-@app.route('/')
-def index():
+@app.route('/', defaults={'page_num': 1})
+@app.route('/<int:page_num>')
+def index(page_num):
     user_id = request.args.get('user')
     if user_id is not None:
         return redirect('/blog?user=' + str(user_id))
-    users = User.query.order_by(User.username.asc()).all()
+    users = User.query.order_by(User.username.asc()).paginate(
+        per_page=20, page=page_num, error_out=True)
     return render_template('index.html', users=users)
 
 
-@app.route('/blog')
-def display_blogs():
+@app.route('/blog/', defaults={'page_num': 1})
+@app.route('/blog/<int:page_num>')
+def display_blogs(page_num):
     blog_id = request.args.get('id')
     user_id = request.args.get('user')
     blogs = []
@@ -72,9 +34,10 @@ def display_blogs():
 
     if user_id is not None:
         blogs = Blog.query.filter_by(owner_id=user_id).order_by(
-            Blog.pub_date.desc()).all()
+            Blog.pub_date.desc()).paginate(per_page=5, page=page_num, error_out=True)
     else:
-        blogs = Blog.query.order_by(Blog.pub_date.desc()).all()
+        blogs = Blog.query.order_by(Blog.pub_date.desc()).paginate(
+            per_page=5, page=page_num, error_out=True)
 
     return render_template('main-blog.html', blogs=blogs)
 
@@ -116,10 +79,10 @@ def signup():
         password = request.form['password']
         verify_password = request.form['verify_password']
 
-        if not re.match(r'^[a-z0-9_-]{3,}$', username):
+        if not re.match(r'^[A-Za-z0-9_-]{3,}$', username):
             username_error = 'Not a valid username'
 
-        if not re.match(r'[A-Za-z0-9@#$%^&+=]{8,}', password):
+        if not re.match(r'[A-Za-z0-9@#$%^&+=]{3,}', password):
             password_error = 'Not a valid password'
 
         if password != verify_password and not password_error:
@@ -137,8 +100,7 @@ def signup():
                 session['username'] = username
                 return redirect('/newpost')
             else:
-                # TODO - user better response messaging
-                return "<h1>Duplicate user</h1>"
+                username_error = 'Username already exists.'
 
     return render_template('signup.html', username=username, password_error=password_error,
                            verify_password_error=verify_password_error, username_error=username_error)
@@ -156,9 +118,8 @@ def login():
         if not user:
             error = 'Error! Username does not exist.'
         else:
-            if user.password == password:
+            if check_pw_hash(password, user.password):
                 session['username'] = username
-                flash('Logged in')
                 return redirect('/newpost')
             else:
                 error = 'Error! Password is incorrect.'
